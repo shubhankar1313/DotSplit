@@ -1,5 +1,6 @@
 import pyfiglet, sys, os, csv, time
 import pandas as pd
+import numpy as np
 from tabulate import tabulate
 
 # MAIN
@@ -86,11 +87,11 @@ def createDatabase(DBName):
         participantList = participants()
 
         # FILE 1 - WORK FILE
-        data = pd.DataFrame([['Expense'] + participantList + ['Amount', 'Paid By', 'Transaction']], index = [''])
+        data = pd.DataFrame([['Due'] + participantList + ['Amount', 'Paid By', 'Transaction']], index = [''])
         data.to_csv(r"C:\DotSplit\Database\\" + DBName + ".csv", header = False, index = False)
         
         # FILE 2 - RECORD FILE
-        data = pd.DataFrame([['Expense'] + participantList + ['Amount', 'Paid By']], index = [''])
+        data = pd.DataFrame([['Due'] + participantList + ['Amount', 'Paid By']], index = [''])
         data.to_csv(r"C:\DotSplit\\Record\\" + DBName + "_record.csv", header = False, index = False)
         
         invalid = 4
@@ -173,6 +174,9 @@ def chooseOptionSelecDB(choice, DBName):
     if choice == '1':
         addExpenseDetails(DBName)
 
+    elif choice == '2':
+        deleteExpenseDetails(DBName)
+
     elif choice == '6':
         loadDB()
 
@@ -208,13 +212,13 @@ def addExpense(expense, amount, paidBy, DBName):
 
     with open(r"C:\DotSplit\Database\\" + DBName + ".csv", 'a', newline = '') as csvfile1:
         csvwriter = csv.writer(csvfile1)
-        csvwriter.writerow(pd.Series([expense] + amountSplit(amount, paidBy, DBName) + [amount, paidBy] + transaction(amount, paidBy, DBName), index = ['']))
+        csvwriter.writerow([expense] + amountSplit(amount, paidBy, DBName) + [amount, paidBy] + transaction(amount, paidBy, DBName))
 
     # File 2 - RECORD
 
     with open(r"C:\DotSplit\\Record\\" + DBName + "_record.csv", 'a', newline = '') as csvfile2:
         csvwriter = csv.writer(csvfile2)
-        csvwriter.writerow(pd.Series([expense] + amountSplit(amount, paidBy, DBName) + [amount, paidBy], index = ['']))
+        csvwriter.writerow([expense] + amountSplit(amount, paidBy, DBName) + [amount, paidBy] + (transaction(amount, paidBy, DBName)))
     
     invalid = 9
     selecDB(DBName)
@@ -235,7 +239,7 @@ def transaction(amount, paidBy, DBName):
     for member in members:
         if member != paidBy:
             transactions.append(member + "$" + paidBy + ":" + str(amountDivider(amount, len(members))))
-    return transactions
+    return [transactions]
 
 def paidByExists(participant, DBName):
     
@@ -244,6 +248,54 @@ def paidByExists(participant, DBName):
     else:
         return False
     
+# 2.2.2 DELETE EXPENSE
+
+def deleteExpenseDetails(DBName):
+    
+    global invalid
+
+    expense = input("Enter Expense To Be Deleted: ")
+
+    if expenseExists(expense, data):
+                    
+            # FILE 1 - WORK FILE
+            with open(r"C:\DotSplit\Database\\" + DBName + ".csv") as file1:
+                data1 = list(csv.reader(file1))        
+            
+            fileRewrite(deleteExpense(expense, data1), DBName)
+
+            # FILE 2 - RECORD FILE
+            with open(r"C:\DotSplit\Database\\" + DBName + ".csv") as file2:
+                data2 = list(csv.reader(file2))        
+            
+            fileRewrite(deleteExpense(expense, data2), DBName)
+            
+            invalid = 12
+            selecDB(DBName)
+        else:
+            invalid = 11
+            selecDB(DBName)
+        
+def deleteExpense(expense, data):
+    for i in range(0, len(data)):
+        if data[i][0] == expense:
+            del data [i]
+            break
+    return data
+
+def fileRewrite(newData, DBName):
+    with open(r"C:\DotSplit\Database\\" + DBName + ".csv", 'w', newline = '') as csvfile1:
+        csvwriter = csv.writer(csvfile1)
+        csvwriter.writerows(newData)
+
+def expenseExists(expense, data):
+    for entry in data:
+        if entry[0] == expense:
+            return True
+    return False
+
+# 2.2.3 SETTLE EXPENSE(S)
+
 # 3 REMOVE DATABASES
 
 def remDB():
@@ -385,15 +437,27 @@ def InvalidMsg(code = 0):
 
     elif code == 10:
         msg = "\nPerson Doesn't Exist In Database!\n"
+
+    elif code == 11:
+        msg = "\nExpense Doesn't Exist In Database!\n"
+
+    elif code == 12:
+        msg = "\nExpense Deleted!\n"
+        
     invalid = 0
     return msg
 
 def readCSV(DBName, loc):
     return pd.read_csv(r"C:\DotSplit\\" + loc + "\\" + DBName + ".csv")
 
+def csvToCsvObj(DBName): # TO TEST
+    with open(r"C:\DotSplit\Database\\" + DBName + ".csv") as file:
+        return csv.reader(file)
+    
 def displayDatabase(DBName):
-    df = readCSV(DBName, "Database")
-    return tabulate(df.iloc[:, 0:-3], headers = ['Due'] + list(df)[1:-3])
+    with open(r"C:\DotSplit\Database\\" + DBName + ".csv") as file:
+        data = np.array(list(csv.reader(file)))
+    return tabulate(data[1:, :-3], headers = data[0][:-3])
 
 def displayDatabases():
     r"To display list of .csv files in C:\DotSplit\Database."
