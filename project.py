@@ -7,7 +7,18 @@ from tabulate import tabulate
 
 def main():
 
+    # Settings
     global invalid
+
+    # Creation of necessary directories
+    if os.path.exists(r"C:\DotSplit\Database") == False:
+        os.makedirs(r"C:\DotSplit\Database")
+
+    if os.path.exists(r"C:\DotSplit\\Record") == False:
+        os.makedirs(r"C:\DotSplit\\Record")
+
+    # Settings - End
+
 
     # Logo
     print(figletText("DotSplit", "slant"))
@@ -98,7 +109,8 @@ def createDatabase(DBName):
         main()
     
     else:
-        forcedBack("\nDatabase By That Name Already Exists!")
+        invalid = 15
+        remDB()
     
 def participants():
 
@@ -107,15 +119,19 @@ def participants():
     participants, i = [], 1
     while i <= 10:
         participant = input(f"Enter Name of Participant {i}: ")
-        if participant == 'X':
-            if i == 1:
-                invalid = 3
-                createDB()
+        if participant not in participants:
+            if participant == 'X':
+                if i == 1:
+                    invalid = 3
+                    createDB()
+                else:
+                    return participants
             else:
-                return participants
+                participants.append(participant)
+                i += 1
         else:
-            participants.append(participant)
-            i += 1
+            invalid = 13
+            createDB()
     return participants
 
 # 2 LOAD DATABASE
@@ -177,6 +193,15 @@ def chooseOptionSelecDB(choice, DBName):
     elif choice == '2':
         deleteExpenseDetails(DBName)
 
+    elif choice == '3':
+        settleExpenseDetails(DBName)
+
+    elif choice == '4':
+        addParticipantDetails(DBName)
+
+    elif choice == '5':
+        deleteParticipantDetails(DBName)
+
     elif choice == '6':
         loadDB()
 
@@ -212,13 +237,13 @@ def addExpense(expense, amount, paidBy, DBName):
 
     with open(r"C:\DotSplit\Database\\" + DBName + ".csv", 'a', newline = '') as csvfile1:
         csvwriter = csv.writer(csvfile1)
-        csvwriter.writerow([expense] + amountSplit(amount, paidBy, DBName) + [amount, paidBy] + transaction(amount, paidBy, DBName))
+        csvwriter.writerow([expense] + amountSplit(amount, paidBy, DBName) + [amount, paidBy] + [transaction(amount, paidBy, DBName)])
 
     # File 2 - RECORD
 
     with open(r"C:\DotSplit\\Record\\" + DBName + "_record.csv", 'a', newline = '') as csvfile2:
         csvwriter = csv.writer(csvfile2)
-        csvwriter.writerow([expense] + amountSplit(amount, paidBy, DBName) + [amount, paidBy] + (transaction(amount, paidBy, DBName)))
+        csvwriter.writerow([expense] + amountSplit(amount, paidBy, DBName) + [amount, paidBy] + [transaction(amount, paidBy, DBName)])
     
     invalid = 9
     selecDB(DBName)
@@ -235,11 +260,11 @@ def amountSplit(amount, paidBy, DBName):
 
 def transaction(amount, paidBy, DBName):
     members = list(readCSV(DBName, "Database"))[1:-3]
-    transactions = []
+    transactions = ""
     for member in members:
         if member != paidBy:
-            transactions.append(member + "$" + paidBy + ":" + str(amountDivider(amount, len(members))))
-    return [transactions]
+            transactions += (member + "$" + paidBy + ":" + str(amountDivider(amount, len(members))) + '|')
+    return transactions[:-1]
 
 def paidByExists(participant, DBName):
     
@@ -256,26 +281,26 @@ def deleteExpenseDetails(DBName):
 
     expense = input("Enter Expense To Be Deleted: ")
 
+    with open(r"C:\DotSplit\Database\\" + DBName + ".csv") as file1:
+                data = list(csv.reader(file1))        
+            
     if expenseExists(expense, data):
                     
-            # FILE 1 - WORK FILE
-            with open(r"C:\DotSplit\Database\\" + DBName + ".csv") as file1:
-                data1 = list(csv.reader(file1))        
-            
-            fileRewrite(deleteExpense(expense, data1), DBName)
+        # FILE 1 - WORK FILE
+        fileRewrite(deleteExpense(expense, data), DBName, "Database")
 
-            # FILE 2 - RECORD FILE
-            with open(r"C:\DotSplit\Database\\" + DBName + ".csv") as file2:
-                data2 = list(csv.reader(file2))        
-            
-            fileRewrite(deleteExpense(expense, data2), DBName)
-            
-            invalid = 12
-            selecDB(DBName)
-        else:
-            invalid = 11
-            selecDB(DBName)
+        # FILE 2 - RECORD FILE
+        with open(r"C:\DotSplit\\Record\\" + DBName + "_record.csv") as file2:
+            data2 = list(csv.reader(file2))        
         
+        fileRewrite(deleteExpense(expense, data2), DBName, "Record")
+        
+        invalid = 12
+        selecDB(DBName)
+    else:
+        invalid = 11
+        selecDB(DBName)
+    
 def deleteExpense(expense, data):
     for i in range(0, len(data)):
         if data[i][0] == expense:
@@ -283,8 +308,8 @@ def deleteExpense(expense, data):
             break
     return data
 
-def fileRewrite(newData, DBName):
-    with open(r"C:\DotSplit\Database\\" + DBName + ".csv", 'w', newline = '') as csvfile1:
+def fileRewrite(newData, DBName, loc):
+    with open(r"C:\DotSplit\\" + loc + "\\" + DBName + ".csv", 'w', newline = '') as csvfile1:
         csvwriter = csv.writer(csvfile1)
         csvwriter.writerows(newData)
 
@@ -295,6 +320,93 @@ def expenseExists(expense, data):
     return False
 
 # 2.2.3 SETTLE EXPENSE(S)
+
+def settleExpenseDetails(DBName):
+
+    global invalid
+    pass
+# 2.2.4 ADD PARTICIPANT
+    
+def addParticipantDetails(DBName):
+
+    global invalid
+
+    participant = input("Enter Name Of Participant: ")
+
+    with open(r"C:\DotSplit\Database\\" + DBName + ".csv") as file:
+        
+        data = list(csv.reader(file))
+
+        if participant in data[0]:
+            invalid = 13
+            selecDB(DBName)   
+        else:
+
+            # FILE 1 - WORK FILE
+            fileRewrite(addParticipant(participant, data, -3), DBName, "Database")
+
+            # FILE 2 - RECORD FILE
+            with open(r"C:\DotSplit\\Record\\" + DBName + "_record.csv") as file2:
+                data2 = list(csv.reader(file2))        
+            
+            fileRewrite(addParticipant(participant, data2, -2), DBName, "Record")
+        
+            invalid = 14
+            selecDB(DBName)
+
+def addParticipant(participant, data, index):
+    data[0].insert(index, participant)
+    for i in range(1, len(data)):
+        data[i].insert(index, 0)
+    return data
+
+# 2.5.5 DELETE PARTICIPANT
+
+def deleteParticipantDetails(DBName):
+
+    global invalid
+
+    participant = input("Enter Name Of Participant: ")
+
+    with open(r"C:\DotSplit\Database\\" + DBName + ".csv") as file:
+        data = list(csv.reader(file))
+
+        if participant in data[0]:
+            
+            # FILE 1 - WORK FILE
+            fileRewrite(deleteParticipant(participant, data), DBName, "Database")
+            
+            # FILE 2 - RECORD FILE
+            with open(r"C:\DotSplit\\Record\\" + DBName + "_record.csv") as file1:
+                data1 = list(csv.reader(file1))
+            
+            fileRewrite(deleteParticipant(participant, data1), DBName, "Record")
+            
+            invalid = 16
+            selecDB(DBName)
+
+        else:
+            invalid = 10
+            selecDB(DBName)
+
+def deleteParticipant(participant, data):
+    index = data[0].index(participant)
+    del data[0][index]
+
+    for entry in data:
+        if participant in entry:
+            data.remove(entry)
+
+    for i in range(1, len(data)):
+
+        del data[i][index]
+
+        transactions = data[i][-1].split('|')
+        for transaction in transactions:
+            if participant in transaction:
+                transactions.remove(transaction)
+        data[i][-1] = "|".join(transactions)
+    return data
 
 # 3 REMOVE DATABASES
 
@@ -378,9 +490,6 @@ def figletText(prompt, style):
     
     return pyfiglet.figlet_format(prompt, font = style)
 
-def back():
-    pass
-
 def forcedBack(prompt):
     print(prompt)
     condition = input("\nPress X To Go Back: ")
@@ -443,7 +552,19 @@ def InvalidMsg(code = 0):
 
     elif code == 12:
         msg = "\nExpense Deleted!\n"
-        
+
+    elif code == 13:
+        msg = "\nRepetition Of Participants Is Not Allowed!\n"
+
+    elif code == 14:
+        msg = "\nParticipant Added!\n"
+
+    elif code == 15:
+        msg = "\nDatabase By That Name Already Exists!\n"
+
+    elif code == 16:
+        msg = "\nParticipant Removed!\n"
+
     invalid = 0
     return msg
 
@@ -477,11 +598,4 @@ if __name__ == "__main__":
 
     invalid = 0 # Variable for checking invalid input in main
     
-    # Creation of necessary directories
-    if os.path.exists(r"C:\DotSplit\Database") == False:
-        os.makedirs(r"C:\DotSplit\Database")
-
-    if os.path.exists(r"C:\DotSplit\\Record") == False:
-        os.makedirs(r"C:\DotSplit\\Record")
-
     main()
