@@ -308,11 +308,6 @@ def deleteExpense(expense, data):
             break
     return data
 
-def fileRewrite(newData, DBName, loc):
-    with open(r"C:\DotSplit\\" + loc + "\\" + DBName + ".csv", 'w', newline = '') as csvfile1:
-        csvwriter = csv.writer(csvfile1)
-        csvwriter.writerows(newData)
-
 def expenseExists(expense, data):
     for entry in data:
         if entry[0] == expense:
@@ -324,7 +319,73 @@ def expenseExists(expense, data):
 def settleExpenseDetails(DBName):
 
     global invalid
-    pass
+    
+    displaySettlements(DBName)
+
+    # Invalid Check
+    print(InvalidMsg(invalid))
+
+    selecSettleExpense(DBName, int(input("Which Expense to Settle? ")))
+
+def selecSettleExpense(DBName, choice):
+
+    global invalid
+
+    dataUpdate = getSettlements(DBName)
+
+    if 0 < choice and choice <= (len(dataUpdate) + 1):
+        settleExpense(DBName, dataUpdate, choice)
+
+    else:
+        invalid  = 2
+        settleExpenseDetails(DBName)
+
+def settleExpense(DBName, dataUpdate, choice):
+
+    if choice == (len(dataUpdate) + 1):
+        with open(r"C:\DotSplit\Database\\" + DBName + ".csv") as file:
+            data = list(csv.reader(file))
+
+def displaySettlements(DBName):
+
+    print("\nExpenses to Settle\n")
+
+    i = 1
+    
+    for entry in getSettlements(DBName):
+        print(f"{i} {entry.split('$')[0]} to {entry.split('$')[1]} -> {getSettlements(DBName).get(entry)}")
+        i += 1
+    
+    if i > 1:
+        print(f"{i} Settle All Expenses")
+    else:
+        print("\n")
+
+def getSettlements(DBName):
+    
+    with open(r"C:\DotSplit\Database\\" + DBName + ".csv") as file:
+        
+        data, dataDict = list(csv.reader(file)), dict()
+        
+        for entry in data[1:]:
+            for transaction in entry[-1].split('|'):
+                if transaction.split(':')[0] in dataDict:
+                    dataDict.update({transaction.split(':')[0]:dataDict.get(transaction.split(':')[0]) + int(transaction.split(':')[1])})
+                else:
+                    dataDict[transaction.split(':')[0]] = int(transaction.split(':')[1])
+
+        for transaction in list(dataDict.keys()):
+            From, To = transaction.split('$')
+            if f"{To}${From}" in list(dataDict.keys()):
+                if dataDict.get(f"{From}${To}") > dataDict.get(f"{To}${From}"):
+                    dataDict.update({f"{From}${To}":dataDict.get(f"{From}${To}") - dataDict.get(f"{To}${From}")})
+                    del dataDict[f"{To}${From}"]
+                else:
+                    dataDict.update({f"{To}${From}":dataDict.get(f"{To}${From}") - dataDict.get(f"{From}${To}")})
+                    del dataDict[f"{From}${To}"]
+
+        return dataDict
+
 # 2.2.4 ADD PARTICIPANT
     
 def addParticipantDetails(DBName):
@@ -589,6 +650,11 @@ def displayDatabases():
         path_time = r"C:\DotSplit\Database\\" + path
         names.append([path[:-4], time.ctime(os.path.getctime(path_time)).split()[2] + " " + time.ctime(os.path.getctime(path_time)).split()[1] + " " + time.ctime(os.path.getctime(path_time)).split()[4]])
     return tabulate(names, headers = ["Database Name", "Date of Creation"], stralign = "center")
+
+def fileRewrite(newData, DBName, loc):
+    with open(r"C:\DotSplit\\" + loc + "\\" + DBName + ".csv", 'w', newline = '') as csvfile1:
+        csvwriter = csv.writer(csvfile1)
+        csvwriter.writerows(newData)
 
 # START
 
