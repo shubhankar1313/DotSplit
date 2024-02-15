@@ -335,6 +335,8 @@ def selecSettleExpense(DBName, choice):
 
     if 0 < choice and choice <= (len(dataUpdate) + 1):
         settleExpense(DBName, dataUpdate, choice)
+        invalid = 17
+        selecDB(DBName)
 
     else:
         invalid  = 2
@@ -342,10 +344,21 @@ def selecSettleExpense(DBName, choice):
 
 def settleExpense(DBName, dataUpdate, choice):
 
-    if choice == (len(dataUpdate) + 1):
-        with open(r"C:\DotSplit\Database\\" + DBName + ".csv") as file:
-            data = list(csv.reader(file))
+    with open(r"C:\DotSplit\Database\\" + DBName + ".csv", 'r') as file1:
+        csvreader = csv.reader(file1)
+        data = list(csvreader)
 
+    if choice == (len(dataUpdate) + 1):
+        
+        with open(r"C:\DotSplit\Database\\" + DBName + ".csv", 'w') as file2:
+            csvwriter = csv.writer(file2)
+            csvwriter.writerows([data[0]])
+    
+    else:
+        with open(r"C:\DotSplit\Database\\" + DBName + ".csv", 'w') as file2:
+            csvwriter = csv.writer(file2)
+            print(dataUpdate)
+        
 def displaySettlements(DBName):
 
     print("\nExpenses to Settle\n")
@@ -365,7 +378,7 @@ def getSettlements(DBName):
     
     with open(r"C:\DotSplit\Database\\" + DBName + ".csv") as file:
         
-        data, dataDict = list(csv.reader(file)), dict()
+        data, dataDict, dataList = list(csv.reader(file)), dict(), list()
         
         for entry in data[1:]:
             for transaction in entry[-1].split('|'):
@@ -376,7 +389,7 @@ def getSettlements(DBName):
 
         for transaction in list(dataDict.keys()):
             From, To = transaction.split('$')
-            if f"{To}${From}" in list(dataDict.keys()):
+            if f"{From}${To}" in list(dataDict.keys()) and f"{To}${From}" in list(dataDict.keys()):
                 if dataDict.get(f"{From}${To}") > dataDict.get(f"{To}${From}"):
                     dataDict.update({f"{From}${To}":dataDict.get(f"{From}${To}") - dataDict.get(f"{To}${From}")})
                     del dataDict[f"{To}${From}"]
@@ -626,6 +639,9 @@ def InvalidMsg(code = 0):
     elif code == 16:
         msg = "\nParticipant Removed!\n"
 
+    elif code == 17:
+        msg = "\nAll Expenses Settled!\n"
+
     invalid = 0
     return msg
 
@@ -638,9 +654,15 @@ def csvToCsvObj(DBName): # TO TEST
     
 def displayDatabase(DBName):
     with open(r"C:\DotSplit\Database\\" + DBName + ".csv") as file:
-        data = np.array(list(csv.reader(file)))
-    return tabulate(data[1:, :-3], headers = data[0][:-3])
-
+        data = np.array(list(csv.reader(file)), dtype = object)
+    
+    try:
+        return tabulate(data[1:, :-3], headers = data[0][:-3])
+    except IndexError:
+        data = np.array([list(data)[0]])
+        # print('\n', data, '\n') # Test
+        return tabulate(data[1:, :-3], headers = data[0][:-3])
+    
 def displayDatabases():
     r"To display list of .csv files in C:\DotSplit\Database."
 
