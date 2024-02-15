@@ -333,9 +333,16 @@ def selecSettleExpense(DBName, choice):
 
     dataUpdate = getSettlements(DBName)
 
-    if 0 < choice and choice <= (len(dataUpdate) + 1):
+    if 0 < choice and choice <= (len(dataUpdate)):
         settleExpense(DBName, dataUpdate, choice)
+        invalid = 18
+        selecDB(DBName)
+
+    elif choice == (len(dataUpdate) + 1):
         invalid = 17
+        selecDB(DBName)
+
+    elif choice == (len(dataUpdate) + 2):
         selecDB(DBName)
 
     else:
@@ -349,29 +356,32 @@ def settleExpense(DBName, dataUpdate, choice):
         data = list(csvreader)
 
     if choice == (len(dataUpdate) + 1):
-        
         with open(r"C:\DotSplit\Database\\" + DBName + ".csv", 'w') as file2:
             csvwriter = csv.writer(file2)
             csvwriter.writerows([data[0]])
     
     else:
-        with open(r"C:\DotSplit\Database\\" + DBName + ".csv", 'w') as file2:
+        with open(r"C:\DotSplit\Database\\" + DBName + ".csv", 'r') as file2: # TO CHANGE TO 'w'
             csvwriter = csv.writer(file2)
-            print(dataUpdate)
+            
+            # Empty due checker & deleter by coordinates
+            # print(dataUpdate[choice - 1])
         
 def displaySettlements(DBName):
 
     print("\nExpenses to Settle\n")
 
     i = 1
-    
+
     for entry in getSettlements(DBName):
-        print(f"{i} {entry.split('$')[0]} to {entry.split('$')[1]} -> {getSettlements(DBName).get(entry)}")
+        print(f"{i} {entry.split('$')[0]} to {entry.split('$')[1].split(':')[0]} -> {entry.split('$')[1].split(':')[1]}")
         i += 1
     
     if i > 1:
         print(f"{i} Settle All Expenses")
+        print(f"{i+1} Back")
     else:
+        print(f"{i} Back")
         print("\n")
 
 def getSettlements(DBName):
@@ -386,18 +396,26 @@ def getSettlements(DBName):
                     dataDict.update({transaction.split(':')[0]:dataDict.get(transaction.split(':')[0]) + int(transaction.split(':')[1])})
                 else:
                     dataDict[transaction.split(':')[0]] = int(transaction.split(':')[1])
-
-        for transaction in list(dataDict.keys()):
-            From, To = transaction.split('$')
-            if f"{From}${To}" in list(dataDict.keys()) and f"{To}${From}" in list(dataDict.keys()):
-                if dataDict.get(f"{From}${To}") > dataDict.get(f"{To}${From}"):
-                    dataDict.update({f"{From}${To}":dataDict.get(f"{From}${To}") - dataDict.get(f"{To}${From}")})
-                    del dataDict[f"{To}${From}"]
+        while len(dataDict) > 0:
+            for transaction in list(dataDict.keys()):
+                From, To = transaction.split('$')
+                if f"{From}${To}" in list(dataDict.keys()) and f"{To}${From}" in list(dataDict.keys()):
+                    if dataDict.get(f"{From}${To}") > dataDict.get(f"{To}${From}"):
+                        dataList.append(f"{From}${To}:{dataDict.get(f"{From}${To}") - dataDict.get(f"{To}${From}")}")
+                        del dataDict[f"{To}${From}"]
+                        del dataDict[f"{From}${To}"]
+                        break
+                    else:
+                        dataList.append(f"{To}${From}:{dataDict.get(f"{To}${From}") - dataDict.get(f"{From}${To}")}")
+                        del dataDict[f"{From}${To}"]
+                        del dataDict[f"{To}${From}"]
+                        break
                 else:
-                    dataDict.update({f"{To}${From}":dataDict.get(f"{To}${From}") - dataDict.get(f"{From}${To}")})
+                    dataList.append(f"{From}${To}:{dataDict.get(f"{From}${To}")}")
                     del dataDict[f"{From}${To}"]
+                    break
 
-        return dataDict
+        return dataList
 
 # 2.2.4 ADD PARTICIPANT
     
@@ -641,6 +659,9 @@ def InvalidMsg(code = 0):
 
     elif code == 17:
         msg = "\nAll Expenses Settled!\n"
+
+    elif code == 18:
+        msg = "\nExpense Settled!\n"
 
     invalid = 0
     return msg
