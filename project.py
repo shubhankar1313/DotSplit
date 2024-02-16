@@ -361,9 +361,20 @@ def settleExpense(DBName, dataUpdate, choice):
             csvwriter.writerows([data[0]])
     
     else:
-        with open(r"C:\DotSplit\Database\\" + DBName + ".csv", 'r') as file2: # TO CHANGE TO 'w'
+        with open(r"C:\DotSplit\Database\\" + DBName + ".csv", 'w', newline = '') as file2: # TO CHANGE TO 'w'
             csvwriter = csv.writer(file2)
+            index = data[0].index(dataUpdate[choice - 1].split('$')[0])
             
+            for entry in data[1:]:
+                if dataUpdate[choice - 1].split(':')[0] in entry[-1] or (dataUpdate[choice - 1].split(':')[0].split('$')[1] + dataUpdate[choice - 1].split(':')[0].split('$')[0]) in entry[-1]:
+                    entry[index] = 0
+                    checkData = entry[-1].split('|')
+                    for transaction in checkData:
+                        if dataUpdate[choice - 1].split(':')[0] in transaction or (dataUpdate[choice - 1].split(':')[0].split('$')[1] + dataUpdate[choice - 1].split(':')[0].split('$')[0]) in transaction:
+                            checkData.remove(transaction)
+                            entry[-1] = "|".join(checkData)
+            csvwriter.writerows(data)
+
             # Empty due checker & deleter by coordinates
             # print(dataUpdate[choice - 1])
         
@@ -396,22 +407,23 @@ def getSettlements(DBName):
                     dataDict.update({transaction.split(':')[0]:dataDict.get(transaction.split(':')[0]) + int(transaction.split(':')[1])})
                 else:
                     dataDict[transaction.split(':')[0]] = int(transaction.split(':')[1])
+
         while len(dataDict) > 0:
             for transaction in list(dataDict.keys()):
                 From, To = transaction.split('$')
                 if f"{From}${To}" in list(dataDict.keys()) and f"{To}${From}" in list(dataDict.keys()):
                     if dataDict.get(f"{From}${To}") > dataDict.get(f"{To}${From}"):
-                        dataList.append(f"{From}${To}:{dataDict.get(f"{From}${To}") - dataDict.get(f"{To}${From}")}")
+                        dataList.append("{}${}:{}".format(From, To, (dataDict.get(f"{From}${To}") - dataDict.get(f"{To}${From}"))))
                         del dataDict[f"{To}${From}"]
                         del dataDict[f"{From}${To}"]
                         break
                     else:
-                        dataList.append(f"{To}${From}:{dataDict.get(f"{To}${From}") - dataDict.get(f"{From}${To}")}")
+                        dataList.append("{}${}:{}".format(To, From, (dataDict.get(f"{To}${From}") - dataDict.get(f"{From}${To}"))))
                         del dataDict[f"{From}${To}"]
                         del dataDict[f"{To}${From}"]
                         break
                 else:
-                    dataList.append(f"{From}${To}:{dataDict.get(f"{From}${To}")}")
+                    dataList.append("{}${}:{}".format(From, To, (dataDict.get(f"{From}${To}"))))
                     del dataDict[f"{From}${To}"]
                     break
 
