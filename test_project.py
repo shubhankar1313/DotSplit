@@ -1,7 +1,4 @@
-"""
-Welcome to DotSplit!
-"""
-from project import figletText, InvalidMsg, amountDivider
+from project_old import figletText, InvalidMsg, amountDivider
 import pyfiglet
 
 def test_slantText():
