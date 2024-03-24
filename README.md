@@ -16,7 +16,7 @@ DotSplit is an application that allows you to track and manage expenses of peopl
 - **Pandas:** Used for efficient management of CSV files.
 - **NumPy:** Used for array creation.
 - **Tabulate:** Used for formatting tables in the application.
-- **Fpdf:** Used for geenrating the PDF report.
+- **Fpdf:** Used for generating the PDF report.
 
 Run the following pip command on your terminal to install the above libraries:
 
