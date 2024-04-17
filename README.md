@@ -51,4 +51,4 @@ pip install -r requirements.txt
 4. The functionality of these options is pretty self-explanatory. The two most important to fun to use ones are 'Settle Expense(s)' and 'Generate Monthly Report'.
 The former displays a list of all the dues from one participant to another which helps in clearing them easily, the database is updated automatically once a due is cleared. The latter generates a PDF report of all the expenses pertaining this particular database and stores it in the 'Export' folder.
 
-This application is extremely useful for people living together in shared spaces as keeping track of expenses can be a tough ask in such situations. DotSplit simplifies the entire process, making the entire thing a whole lot easier to keep track of.
+This application is extremely useful for people living together in a shared space as keeping track of expenses can be a tough ask in such situations. DotSplit simplifies the entire process, making the entire thing a whole lot easier to keep track of.
